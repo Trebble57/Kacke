@@ -10,17 +10,26 @@ public class GameOverController : MonoBehaviour {
     public Rigidbody2D Projectile;          //	The rigidbody of the projectile
     [Tooltip("The Canvas that will be activated on \"Game Over\"")]
     public Canvas GameOverCanvas;           //  The Canvas that contains the GameOverScreen. Can NOT be null.
+    public Text TextTimeScore;
+    public Text TextAmmoScore;
+    public Text TextTotalScore;
     [Header("Optional")]
     [Tooltip("The speed value below which the GameOver function will be called")]
     public float ResetSpeed = 0.025f;       //	The angular velocity threshold of the projectile, below which our game will reset
     [Tooltip("The Text that will display the loading progress of the next level.")]
     public Text LvlLoadText;                //  The text that displays the loading status. Can be null.
+    [Tooltip("Amount of score points for every potato left")]
+    public int ScorePerPotato = 10;
+    [Tooltip("Amount of score points for every second left")]
+    public int ScorePerSecond = 2;
 
     private float resetSpeedSqr;            //	The square value of Reset Speed, for efficient calculation
     private SpringJoint2D spring;           //	The SpringJoint2D component which is destroyed when the projectile is launched
     private AsyncOperation lvlPreloadAction;//  Contains AsyncOperation object when loading of next level via Application.LoadLevelAsync is called
     private bool lvlLoadStarted = false;    //  Gets set when loadNextLevel coroutine is running
     private bool lvlLoaded = false;         //  True if loadNextLevel has finished
+    private bool scoreCountFinished = false;
+    private TimeCounter timer;
 
     void Start()
     {
@@ -31,6 +40,11 @@ public class GameOverController : MonoBehaviour {
             else
                 Application.Quit();
         }
+
+        TextTimeScore = GameObject.Find("valTimeLeft").GetComponent<Text>();
+        TextAmmoScore = GameObject.Find("valAmmoLeft").GetComponent<Text>();
+        TextTotalScore = GameObject.Find("valTotalScore").GetComponent<Text>();
+        timer = GameObject.Find("OrthoFollowResetCamera").GetComponent<TimeCounter>();
 
         // Set current levelIndex, so the Player can continue the game when he returns.
         PlayerPrefs.SetInt("LastLevel", Application.loadedLevel);
@@ -111,6 +125,7 @@ public class GameOverController : MonoBehaviour {
             // Enable Canvas and Animator component so it will start playing the FadeIn animation
             GameOverCanvas.enabled = true;
             GameOverCanvas.GetComponent<Animator>().enabled = true;
+            CountScore();
             GameObject.Find("btnNext").GetComponent<Button>().interactable = true;
             GameObject.Find("btnQuit").GetComponent<Button>().interactable = true;
             return;
@@ -121,12 +136,27 @@ public class GameOverController : MonoBehaviour {
         GameOverCanvas.enabled = true;
         GameOverCanvas.GetComponent<Animator>().enabled = true;
 
+        CountScore();
+
         if (LvlLoadText != null) // If LvlLoadText has been set in the editor, we'll tell the player that he has beat the game
             LvlLoadText.text = "Congrats! You finished the game!";
 
         // This time we only enable the menu button as there are no other levels
         GameObject.Find("btnQuit").GetComponent<Button>().interactable = true;
         PlayerPrefs.DeleteKey("LastLevel"); // Delete stored lastLevel count as player beat all levels.
+    }
+
+    int timeScore = 0;
+
+    void CountScore()
+    {
+        timer.Enabled = false;
+        timer.TotalGameTime = timer.TotalGameTime.Subtract(new TimeSpan(0, 0, 0, 1));
+        timeScore += ScorePerSecond;
+        int length = GameObject.FindGameObjectsWithTag("Player").Length;
+        TextAmmoScore.text = "" + length * ScorePerPotato;
+        TextTimeScore.text = timeScore.ToString();
+        TextTotalScore.text = "" + length * ScorePerPotato + timeScore;
     }
 
     /// <summary>
@@ -163,6 +193,11 @@ public class GameOverController : MonoBehaviour {
     public void OnQuitClick()
     {
         Application.LoadLevel(1); //MainMenu.scene
+    }
+
+    public void TimeOut()
+    {
+        Application.LoadLevel(Application.loadedLevel);
     }
 }
 

@@ -42,6 +42,11 @@ public class DispenserTrigger : MonoBehaviour {
         }
         goCtrl.GameOverCanvas = GameObject.Find("CanvasGameOver").GetComponent<Canvas>();
         goCtrl.Projectile = potato.GetComponent<Rigidbody2D>();
+
+        
+        GameObject.Find("btnNext").GetComponent<Button>().onClick.AddListener(goCtrl.OnNextLevelClick); ;
+        GameObject.Find("btnQuit").GetComponent<Button>().onClick.AddListener(goCtrl.OnQuitClick); ;
+
         CatapultBack.probeAnchor = potato.transform;
         CatapultFront.probeAnchor = potato.transform;
         CatapultBack.enabled = true;
