@@ -3,24 +3,29 @@ using System.Collections;
 
 public class TargetDamage : MonoBehaviour {
 
-	public int hitPoints = 2;					//	The amount of damage our target can take
-	public Sprite damagedSprite;				//	The reference to our "damaged" sprite
-	public float damageImpactSpeed;				//	The speed threshold of colliding objects before the target takes damage
+	public int HitPoints = 2;					//	The amount of damage our target can take
+	public Sprite DamagedSprite;				//	The reference to our "damaged" sprite
+	public float DamageImpactSpeed;				//	The speed threshold of colliding objects before the target takes damage
+    public AudioClip TargetHitSound;                 //  Sound that will be played when target object is hit
 	
 	
 	private int currentHitPoints;				//	The current amount of health our target has taken
 	private float damageImpactSpeedSqr;			//	The square value of Damage Impact Speed, for efficient calculation
 	private SpriteRenderer spriteRenderer;		//	The reference to this GameObject's sprite renderer
+    private AudioSource aSource;                //  AudioSource that will be used to play sounds
 	
 	void Start () {
 		//	Get the SpriteRenderer component for the GameObject's Rigidbody
 		spriteRenderer = GetComponent <SpriteRenderer> ();
 
+        // Get the attached AudioSource compoenent
+        aSource = GetComponent<AudioSource>();
+
 		//	Initialize the Hit Points
-		currentHitPoints = hitPoints;
+		currentHitPoints = HitPoints;
 
 		//	Calculate the Damage Impact Speed Squared from the Damage Impact Speed
-		damageImpactSpeedSqr = damageImpactSpeed * damageImpactSpeed;
+		damageImpactSpeedSqr = DamageImpactSpeed * DamageImpactSpeed;
 	}
 	
 	void OnCollisionEnter2D (Collision2D collision) {
@@ -31,8 +36,11 @@ public class TargetDamage : MonoBehaviour {
 		//	Check the colliding object's velocity's Square Magnitude, and if it is less than the threshold, exit this function
 		if (collision.relativeVelocity.sqrMagnitude < damageImpactSpeedSqr)
 			return;
+
+        aSource.PlayOneShot(TargetHitSound);
+
 		//	We have taken damage, so change the sprite to the damaged sprite
-		spriteRenderer.sprite = damagedSprite;
+		spriteRenderer.sprite = DamagedSprite;
 		//	Decriment the Current Health of the target
 		currentHitPoints--;
 

@@ -26,8 +26,6 @@ public class GameOverController : MonoBehaviour {
     private float resetSpeedSqr;            //	The square value of Reset Speed, for efficient calculation
     private SpringJoint2D spring;           //	The SpringJoint2D component which is destroyed when the projectile is launched
     private AsyncOperation lvlPreloadAction;//  Contains AsyncOperation object when loading of next level via Application.LoadLevelAsync is called
-    private bool lvlLoadStarted = false;    //  Gets set when loadNextLevel coroutine is running
-    private bool lvlLoaded = false;         //  True if loadNextLevel has finished
     private bool scoreCountFinished = false;
     private TimeCounter timer;
 
@@ -167,7 +165,6 @@ public class GameOverController : MonoBehaviour {
     {
         GameObject.Find("btnNext").GetComponent<Button>().interactable = false;
         GameObject.Find("btnQuit").GetComponent<Button>().interactable = false;
-        lvlLoadStarted = true; // Set this to prevent from spawning infinite instances of this function
         lvlPreloadAction = Application.LoadLevelAsync(Application.loadedLevel + 1); // Start the actual loading
 
 
@@ -176,7 +173,6 @@ public class GameOverController : MonoBehaviour {
         yield return lvlPreloadAction.isDone; // Yield to next frame if load has not finished 
     
         PlayerPrefs.SetInt("LastLevel", Application.loadedLevel + 1);
-        lvlLoaded = true; 
     }
 
     /// <summary>

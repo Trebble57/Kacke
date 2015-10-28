@@ -13,6 +13,8 @@ public class ProjectileDragging : MonoBehaviour {
     public string LayerNameFrontLine = "Foreground";
     [Tooltip("Name of the Rubber band attached to the back catapult part")]
     public string LayerNameBackLine = "Foreground";
+    public AudioClip ProjectileReleaseSound;
+    public AudioClip ProjectileFlyingSound;
 	
 	private SpringJoint2D spring;           // The spring joint that will hold the projectile inside the specified radius
 	private Transform catapult;             // Transform instance of the catapult
@@ -22,7 +24,7 @@ public class ProjectileDragging : MonoBehaviour {
 	private float circleRadius;             // Radius of the projectile collider
 	private bool clickedOn;                 // Indicates whether the projectile has been clicked on
 	private Vector2 prevVelocity;           // Velocity from the previous frame
-
+    private AudioSource aSource;            // AudioSource for this component
 
     void Awake () {
         // Get the catapult transform as soon as the physics simulation for this object starts
@@ -32,11 +34,11 @@ public class ProjectileDragging : MonoBehaviour {
 	
 	void Start ()
     {
+        aSource = GameObject.Find("Dispenser").GetComponent<AudioSource>();
         LineRendererSetup ();
 		rayToMouse = new Ray(catapult.position, Vector3.zero);
 		leftCatapultToProjectile = new Ray(catapultLineFront.transform.position, Vector3.zero);
 		maxStretchSqr = maxStretch * maxStretch;
-		PolygonCollider2D circle = GetComponent<Collider2D>() as PolygonCollider2D;
 
         circleRadius = 0.3f;
 	}
@@ -82,6 +84,11 @@ public class ProjectileDragging : MonoBehaviour {
 		spring.enabled = true;
 		GetComponent<Rigidbody2D>().isKinematic = false;
         GameObject.Find("OrthoFollowResetCamera").GetComponent<GameOverController>().enabled = true;
+        if (ProjectileReleaseSound != null)
+            aSource.PlayOneShot(ProjectileReleaseSound);
+
+        aSource.clip = ProjectileFlyingSound;
+        aSource.PlayDelayed(0.05f);
         clickedOn = false;
 	}
 
