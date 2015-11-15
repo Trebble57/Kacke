@@ -1,9 +1,11 @@
 fileFormatVersion: 2
 guid: 7cd3653a512438f44b7df26d13309f62
+labels:
+- Audio
 folderAsset: yes
 timeCreated: 1446023692
 licenseType: Free
 DefaultImporter:
   userData: 
-  assetBundleName: 
+  assetBundleName: sounds
   assetBundleVariant: 

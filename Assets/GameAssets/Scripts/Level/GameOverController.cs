@@ -9,7 +9,7 @@ public class GameOverController : MonoBehaviour {
     [Tooltip("The projectile that will be monitored.")]
     public Rigidbody2D Projectile;          //	The rigidbody of the projectile
     [Tooltip("The Canvas that will be activated on \"Game Over\"")]
-    public Canvas GameOverCanvas;           //  The Canvas that contains the GameOverScreen. Can NOT be null.
+    public GameObject GameOverCanvas;           //  The Canvas that contains the GameOverScreen. Can NOT be null.
     public Text TextTimeScore;
     public Text TextAmmoScore;
     public Text TextTotalScore;
@@ -23,11 +23,12 @@ public class GameOverController : MonoBehaviour {
     [Tooltip("Amount of score points for every second left")]
     public int ScorePerSecond = 2;
 
-    private float resetSpeedSqr;            //	The square value of Reset Speed, for efficient calculation
-    private SpringJoint2D spring;           //	The SpringJoint2D component which is destroyed when the projectile is launched
-    private AsyncOperation lvlPreloadAction;//  Contains AsyncOperation object when loading of next level via Application.LoadLevelAsync is called
-    private bool scoreCountFinished = false;
-    private TimeCounter timer;
+    private float _resetSpeedSqr;            //	The square value of Reset Speed, for efficient calculation
+    private SpringJoint2D _spring;           //	The SpringJoint2D component which is destroyed when the projectile is launched
+    private AsyncOperation _lvlPreloadAction;//  Contains AsyncOperation object when loading of next level via Application.LoadLevelAsync is called
+    private TimeCounter _timer;
+    private SoundAssets _sounds;
+    private AudioSource _aSource;
 
     void Start()
     {
@@ -42,17 +43,19 @@ public class GameOverController : MonoBehaviour {
         TextTimeScore = GameObject.Find("valTimeLeft").GetComponent<Text>();
         TextAmmoScore = GameObject.Find("valAmmoLeft").GetComponent<Text>();
         TextTotalScore = GameObject.Find("valTotalScore").GetComponent<Text>();
-        timer = GameObject.Find("OrthoFollowResetCamera").GetComponent<TimeCounter>();
+        _timer = GameObject.Find("LC").GetComponent<TimeCounter>();
+        _sounds = GameObject.Find("LC").GetComponent<SoundAssets>();
+        _aSource = GameObject.Find("Dispenser").GetComponent<AudioSource>();
 
         // Set current levelIndex, so the Player can continue the game when he returns.
         PlayerPrefs.SetInt("LastLevel", Application.loadedLevel);
         //	Calculate the Resset Speed Squared from the Reset Speed
-        resetSpeedSqr = ResetSpeed * ResetSpeed;
+        _resetSpeedSqr = ResetSpeed * ResetSpeed;
 
 
 
         //	Get the SpringJoint2D component through our reference to the GameObject's Rigidbody
-        spring = Projectile.GetComponent<SpringJoint2D>();
+        _spring = Projectile.GetComponent<SpringJoint2D>();
 
     }
 
@@ -69,7 +72,7 @@ public class GameOverController : MonoBehaviour {
             return;
 
         //	If the spring had been destroyed (indicating we have launched the projectile) and our projectile's velocity is below the threshold...
-        if (spring == null && Projectile.velocity.sqrMagnitude < resetSpeedSqr)
+        if (_spring == null && Projectile.velocity.sqrMagnitude < _resetSpeedSqr)
         {
             //	remove projectiles and call the Reset() function
             Destroy(Projectile.gameObject, 0f);
@@ -96,13 +99,13 @@ public class GameOverController : MonoBehaviour {
         var enemies = GameObject.FindGameObjectsWithTag("Target");
         if (enemies.Length > 0)
         {
-            //  There are still enemies in the scene => no cookie for you (checl for left ammo and reset)!
+            //  There are still enemies in the scene => no cookie for you (check for ammo left and reset)!
 
             var projectiles = GameObject.FindGameObjectsWithTag("Player");
             if (projectiles.Length-1 > 0)
             {
                 var cam = GameObject.Find("OrthoFollowResetCamera");
-                Destroy(cam.GetComponent<ProjectileFollow>());
+                DestroyImmediate(cam.GetComponent<ProjectileFollow>());
                 var pFollow = cam.AddComponent<ProjectileFollow>();
                 pFollow.farLeft = GameObject.Find("MarkerLeft").transform;
                 pFollow.farRight = GameObject.Find("MarkerRight").transform;
@@ -110,9 +113,12 @@ public class GameOverController : MonoBehaviour {
                 GameObject.Find("Dispenser").GetComponent<DispenserController>().Dispense();
                 return;
             }
-            Application.LoadLevel(Application.loadedLevel);
+            _aSource.PlayOneShot(_sounds.LevelFailed);
+            StartCoroutine("reloadLevel");
             return;
         }
+
+        _aSource.PlayOneShot(_sounds.LevelSuccess);
 
         //  At this point there are no enemies in the scene. Let's check whether this is the last level.
         if (Application.levelCount > Application.loadedLevel + 1)
@@ -121,18 +127,22 @@ public class GameOverController : MonoBehaviour {
             // there is still at least a level left. (We need to add 1 'cause the levelIndex is zero based)
 
             // Enable Canvas and Animator component so it will start playing the FadeIn animation
-            GameOverCanvas.enabled = true;
-            GameOverCanvas.GetComponent<Animator>().enabled = true;
+            var cv = GameOverCanvas.GetComponent<Canvas>();
+            cv.enabled = true;
+            var an = GameOverCanvas.GetComponent<Animation>();
+            an.enabled = true;
             CountScore();
             GameObject.Find("btnNext").GetComponent<Button>().interactable = true;
             GameObject.Find("btnQuit").GetComponent<Button>().interactable = true;
+
+            PlayerPrefs.SetInt("LastLevel", Application.loadedLevel + 1);
             return;
         }
 
 
         // This code section will only be reached when this is the last level as all  other blocks have return statements
-        GameOverCanvas.enabled = true;
-        GameOverCanvas.GetComponent<Animator>().enabled = true;
+        GameOverCanvas.GetComponent<Canvas>().enabled = true;
+        GameOverCanvas.GetComponent<Animation>().enabled = true;
 
         CountScore();
 
@@ -148,13 +158,13 @@ public class GameOverController : MonoBehaviour {
 
     void CountScore()
     {
-        timer.Enabled = false;
-        timer.TotalGameTime = timer.TotalGameTime.Subtract(new TimeSpan(0, 0, 0, 1));
+        _timer.Enabled = false;
+        _timer.TotalGameTime = _timer.TotalGameTime.Subtract(new TimeSpan(0, 0, 0, 1));
         timeScore += ScorePerSecond;
         int length = GameObject.FindGameObjectsWithTag("Player").Length;
         TextAmmoScore.text = "" + length * ScorePerPotato;
         TextTimeScore.text = timeScore.ToString();
-        TextTotalScore.text = "" + length * ScorePerPotato + timeScore;
+        TextTotalScore.text = "" + length * ScorePerPotato * timeScore;
     }
 
     /// <summary>
@@ -165,16 +175,19 @@ public class GameOverController : MonoBehaviour {
     {
         GameObject.Find("btnNext").GetComponent<Button>().interactable = false;
         GameObject.Find("btnQuit").GetComponent<Button>().interactable = false;
-        lvlPreloadAction = Application.LoadLevelAsync(Application.loadedLevel + 1); // Start the actual loading
+        _lvlPreloadAction = Application.LoadLevelAsync(Application.loadedLevel + 1); // Start the actual loading
 
 
         if (LvlLoadText != null) // If LvlLoadText has been set in the editor, we'll display the progress.
-            LvlLoadText.text = "Loading next level... (" + lvlPreloadAction.progress * 100 + "%)";
-        yield return lvlPreloadAction.isDone; // Yield to next frame if load has not finished 
-    
-        PlayerPrefs.SetInt("LastLevel", Application.loadedLevel + 1);
+            LvlLoadText.text = "Loading next level... (" + _lvlPreloadAction.progress * 100 + "%)";
+        yield return _lvlPreloadAction.isDone; // Yield to next frame if load has not finished 
     }
 
+    IEnumerator reloadLevel()
+    {
+        yield return new WaitForSeconds(2f); // Wait 'till sound has played 
+        Application.LoadLevel(Application.loadedLevel);
+    }
     /// <summary>
     /// Function to be called by the Next-Level-Button on the GameOverCanvas
     /// </summary>
