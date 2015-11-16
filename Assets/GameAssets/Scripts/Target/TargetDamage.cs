@@ -49,7 +49,7 @@ public class TargetDamage : MonoBehaviour {
         //	If the Current Health is less than or equal to zero, call the Kill() function
         if (_currentHitPoints <= 0)
         {
-            _aSource.PlayOneShot(_sounds.TargetExplode);
+            GameObject.Find("Dispenser").GetComponent<AudioSource>().PlayOneShot(_sounds.TargetExplode); // Sound needs to be played on an audioSource that wil not be destroyed
             Kill();
         }
         else if (_currentHitPoints >= 1)
