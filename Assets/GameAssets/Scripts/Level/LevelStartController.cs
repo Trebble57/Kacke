@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class LevelStartController : MonoBehaviour {
 
-    public float                LevelStartTime = 3f;
+    public float                LevelStartTime = 3f; 
 
     private DispenserController _dispenser;
     private SoundAssets         _sounds;

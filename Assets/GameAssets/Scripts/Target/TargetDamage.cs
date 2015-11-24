@@ -5,9 +5,9 @@ public class TargetDamage : MonoBehaviour {
 
 	public int              HitPoints = 2;				//	The amount of damage our target can take
 	public Sprite           DamagedSprite;              //	The reference to our "damaged" sprite
-    public Sprite           ExplosionSprite;				//	The reference to our "damaged" sprite
+    public Sprite           ExplosionSprite;			//	The reference to our "damaged" sprite
 	public float            DamageImpactSpeed;			//	The speed threshold of colliding objects before the target takes damage
-	
+    public GameObject       DeathParticleSystem;        //  Partcile System that will be spawned upon death
 	
 	private int             _currentHitPoints;			//	The current amount of health our target has taken
 	private float           _damageImpactSpeedSqr;		//	The square value of Damage Impact Speed, for efficient calculation
@@ -33,8 +33,8 @@ public class TargetDamage : MonoBehaviour {
 	}
 	
 	void OnCollisionEnter2D (Collision2D collision) {
-		//	Check the colliding object's tag, and if it is not "Damager", exit this function
-		if (collision.collider.tag != "Damager")
+        //	Check the colliding object's tag, and if it is not "Damager", exit this function
+        if (collision.collider.tag != "Damager" && collision.collider.tag != "Player")
 			return;
 		
 		//	Check the colliding object's velocity's Square Magnitude, and if it is less than the threshold, exit this function
@@ -63,8 +63,8 @@ public class TargetDamage : MonoBehaviour {
 		GetComponent<Rigidbody2D>().isKinematic = true;
 
         _spriteRenderer.sprite = ExplosionSprite;
-        //	... and Play the particle system
-        GetComponent<ParticleSystem>().Play();
+        //	... Add Particle system and play it
+        Instantiate(DeathParticleSystem, transform.position, Quaternion.identity);
 
         // Remove the object from the scene manager
         Destroy(gameObject,0);

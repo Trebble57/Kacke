@@ -84,7 +84,7 @@ public class DispenserController : MonoBehaviour {
     /// </summary>
     IEnumerator closeHatch()
     {
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.4f);
         HatchColl.enabled = true;
     }
 

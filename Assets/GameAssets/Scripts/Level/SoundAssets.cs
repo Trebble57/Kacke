@@ -14,4 +14,6 @@ public class SoundAssets : MonoBehaviour {
     public AudioClip LevelStart;
     public AudioClip LevelFailed;
     public AudioClip LevelSuccess;
+
+    public AudioClip CashRegister;
 }
